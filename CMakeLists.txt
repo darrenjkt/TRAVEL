@@ -14,5 +14,5 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (travel travel.cpp)
+add_executable (travel travel_demo.cpp)
 target_link_libraries (travel ${PCL_LIBRARIES})

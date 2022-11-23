@@ -1,1 +1,4 @@
 build
+*.so
+*.egg-info
+*.pcd

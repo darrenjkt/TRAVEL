@@ -5,14 +5,15 @@
 // We really appreciate Hyungtae Lim and Prof. Hyun Myung! :)
 //
 #include <iostream>
-#include <Eigen/Dense>
 #include <vector>
 #include <random>
 #include <mutex>
 #include <thread>
 #include <chrono>
 #include <math.h>
+#include <queue>
 
+#include <Eigen/Dense>
 #include <pcl/filters/filter.h>
 #include <pcl/common/centroid.h>
 #include <pcl/filters/voxel_grid.h>
@@ -87,20 +88,6 @@ namespace travel {
     template <typename PointType>
     class TravelGroundSeg{
     private:
-        // ros::NodeHandle node_handle_;
-        // pcl::PCLHeader cloud_header_;
-        // std_msgs::Header msg_header_;
-
-        // ros::Publisher pub_trigrid_nodes_;
-        // ros::Publisher pub_trigrid_edges_;
-        // ros::Publisher pub_trigrid_corners_;
-        // ros::Publisher pub_tgseg_ground_cloud;
-        // ros::Publisher pub_tgseg_nonground_cloud;
-        // ros::Publisher pub_tgseg_outliers_cloud;
-        
-        // jsk_recognition_msgs::PolygonArray viz_trigrid_polygons_;
-        // visualization_msgs::Marker viz_trigrid_edges_;
-        // pcl::PointCloud<pcl::PointXYZ> viz_trigrid_corners_;
 
         bool REFINE_MODE_;
         bool VIZ_MDOE_;
@@ -148,16 +135,8 @@ namespace travel {
         pcl::PointCloud<PointType> ptCloud_nodewise_obstacle_tmp;
 
     public:
-        // TravelGroundSeg(ros::NodeHandle* nh):node_handle_(*nh){
         TravelGroundSeg(){
 
-            // pub_trigrid_nodes_  = node_handle_.advertise<jsk_recognition_msgs::PolygonArray>("/travelgseg/nodes", 1);
-            // pub_trigrid_edges_  = node_handle_.advertise<visualization_msgs::Marker>("/travelgseg/edges", 1);
-            // pub_trigrid_corners_= node_handle_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/travelgseg/corners", 1);
-            
-            // pub_tgseg_ground_cloud    = node_handle_.advertise<sensor_msgs::PointCloud2>("/travelgseg/ground_cloud", 1);
-            // pub_tgseg_nonground_cloud = node_handle_.advertise<sensor_msgs::PointCloud2>("/travelgseg/nonground_cloud", 1);
-            // pub_tgseg_outliers_cloud   = node_handle_.advertise<sensor_msgs::PointCloud2>("/travelgseg/outlier_cloud", 1);
         };
 
         void setParams(const double max_range, const double min_range, const double resolution, 
@@ -165,7 +144,6 @@ namespace travel {
                             const double th_dist, const double th_outlier, const double th_normal, const double th_weight, 
                             const double th_lcc_normal_similiarity, const double th_lcc_planar_model_dist, const double th_obstacle,
                             const bool refine_mode, const bool visualization) {
-            std::cout<<""<<std::endl;
 
             MAX_RANGE_ = max_range;
 
@@ -224,20 +202,30 @@ namespace travel {
             ptCloud_nodewise_obstacle_tmp.reserve(NODEWISE_PTCLOUDSIZE);
         };
 
-        void estimateGround(const pcl::PointCloud<PointType>& cloud_in,
-                            pcl::PointCloud<PointType>& cloudGround_out,
-                            pcl::PointCloud<PointType>& cloudNonground_out,
-                            double& time_taken){
+        // Converted inputs to Eigen::Vector3d so that we can feed Open3D vectors in
+        void estimateGround(const std::vector<Eigen::Vector3d>& cloud_in_vec,
+                            std::vector<Eigen::Vector3d>& cloudGround_out_vec,
+                            std::vector<Eigen::Vector3d>& cloudNonground_out_vec,
+                            double& time_taken){            
         
             // 0. Init
             static time_t start, end;
-            // cloud_header_ = cloud_in.header;
-            // pcl_conversions::fromPCL(cloud_header_, msg_header_);
-            // print("TriGrid Field-based Traversable Ground Segmentation...");
+            pcl::PointCloud<PointType> cloud_in;
+            pcl::PointCloud<PointType> cloudGround_out;
+            pcl::PointCloud<PointType> cloudNonground_out;
+            
+            // Convert Eigen to PointCloud
+            for (auto &point_vec : cloud_in_vec){
+                PointType point;
+                point.x = point_vec[0];
+                point.y = point_vec[1];
+                point.z = point_vec[2];
+                cloud_in.push_back(point);
+            }
+
             start = clock();
             ptCloud_tgfwise_outliers_.clear();
             ptCloud_tgfwise_outliers_.reserve(cloud_in.size());
-
 
             // 1. Embed PointCloud to TriGridField
             clearTriGridField(trigrid_field_);
@@ -260,8 +248,16 @@ namespace travel {
             // 5. Ground Segmentation
             segmentTGFGround(trigrid_field_, ptCloud_tgfwise_ground_, ptCloud_tgfwise_nonground_, ptCloud_tgfwise_obstacle_, ptCloud_tgfwise_outliers_);
             cloudGround_out = ptCloud_tgfwise_ground_;
-            cloudNonground_out = ptCloud_tgfwise_nonground_;
-            // cloudGround_out.header = cloudNonground_out.header = cloud_header_;
+            cloudNonground_out = ptCloud_tgfwise_nonground_;            
+
+            for (auto &point : cloudGround_out.points){
+                Eigen::Vector3d point_eigen (static_cast<double>(point.x), static_cast<double>(point.y), static_cast<double>(point.z));  
+                cloudGround_out_vec.push_back(point_eigen);
+            }
+            for (auto &point : cloudNonground_out.points){
+                Eigen::Vector3d point_eigen (static_cast<double>(point.x), static_cast<double>(point.y), static_cast<double>(point.z));  
+                cloudNonground_out_vec.push_back(point_eigen);
+            }
 
             end = clock();
             time_taken = (double)(end - start) / CLOCKS_PER_SEC;
@@ -638,7 +634,7 @@ namespace travel {
 
         void findDominantNode(const TriGridField<PointType>& tgf_in, TriGridIdx& node_idx_out) {
             // Find the dominant node
-            std::cout << "Find the dominant node..." << std::endl;
+            // std::cout << "Find the dominant node..." << std::endl;
             TriGridIdx max_tri_idx;
             TriGridIdx ego_idx;
             ego_idx.row = (int)((0-tgf_min_x)/TGF_RESOLUTION_);

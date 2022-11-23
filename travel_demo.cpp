@@ -19,7 +19,6 @@
 //#include <opencv/cv.h>
 #include <signal.h>
 
-#include "aos.hpp"
 #include "tgs.hpp"
 
 struct PointXYZILID
@@ -42,7 +41,6 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZILID,
 using PointT = PointXYZILID;
 
 boost::shared_ptr<travel::TravelGroundSeg<PointT>> travel_ground_seg;
-boost::shared_ptr<travel::ObjectCluster<PointT>> travel_object_seg;
 
 pcl::PointCloud<PointT>::Ptr cloud_in;
 pcl::PointCloud<PointT>::Ptr filtered_pc;
@@ -80,29 +78,9 @@ int main(void)
   float th_lcc_normal_similarity = 0.125;
   float th_lcc_planar_dist = 0.25;
 
-  // Object clustering
-  // int vert_scan = 64;
-  // int horz_scan = 1800;
-  // float min_vert_angle = 50.0;
-  // float  max_vert_angle = 50.0;
-  // int  downsample = 2;
-  // float car_width = 1.0;
-  // float car_length = 1.0;
-  // float lidar_width_offset = 0.0;
-  // float lidar_length_offset = 0.0;
-  // float horz_merge_thres = 0.3;
-  // float vert_merge_thres = 1.0;
-  // int vert_scan_size = 4;
-  // int horz_scan_size = 4;
-  // int horz_skip_size = 4;
-  // int horz_extension_size = 3;
-  // int min_cluster_size = 4;
-  // int max_cluster_size = 100;
   bool refine_mode = false;
   bool viz_mode = false;
 
-  std::cout << "Max Range: " << max_range_ << std::endl;
-  std::cout << "Min Range: " << min_range_ << std::endl;
   travel_ground_seg->setParams(max_range_, min_range_, tgf_res, 
                               num_iter, num_lpr, num_min_pts, th_seeds, 
                               th_dist, th_outlier, th_normal, th_weight, 
@@ -122,9 +100,36 @@ int main(void)
       }
       filtered_pc->push_back(point);
   }
+  
+  // Convert from pcl::PointCloud to std::vector<Eigen::Vector3d>
+  std::vector<Eigen::Vector3d> nonground_pc_vec;
+  std::vector<Eigen::Vector3d> ground_pc_vec;
+  std::vector<Eigen::Vector3d> filtered_pc_vec;
+  for (auto &point : filtered_pc->points){
+    Eigen::Vector3d point_eigen (static_cast<double>(point.x), static_cast<double>(point.y), static_cast<double>(point.z));  
+    filtered_pc_vec.push_back(point_eigen);
+  }
+
   // Apply traversable ground segmentation
   double ground_seg_time = 0.0;
-  travel_ground_seg->estimateGround(*filtered_pc, *ground_pc, *nonground_pc, ground_seg_time);
+  travel_ground_seg->estimateGround(filtered_pc_vec, ground_pc_vec, nonground_pc_vec, ground_seg_time);
+
+  // Convert from std::vector<Eigen::Vector3d> to pcl::PointCloud
+  for (auto &point_vec : ground_pc_vec){
+      PointT point;
+      point.x = point_vec[0];
+      point.y = point_vec[1];
+      point.z = point_vec[2];
+      ground_pc->push_back(point);
+  }
+  for (auto &point_vec : nonground_pc_vec){
+      PointT point;
+      point.x = point_vec[0];
+      point.y = point_vec[1];
+      point.z = point_vec[2];
+      nonground_pc->push_back(point);
+  }
+
   std::cout << "\033[1;35m Traversable-Ground Seg: " << filtered_pc->size() << " -> Ground: " << ground_pc->size() << ", NonGround: " << nonground_pc->size() << "\033[0m" << std::endl;
   std::cout << "Traversable-Ground Seg time: " << ground_seg_time << std::endl;
 
