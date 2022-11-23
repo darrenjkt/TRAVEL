@@ -27,7 +27,7 @@ tgs.setParams(max_range_, min_range_, tgf_res,
                               refine_mode, viz_mode)
 
 # Read pcd
-pcd = o3d.io.read_point_cloud('/TRAVEL/build/demo.pcd')
+pcd = o3d.io.read_point_cloud('/TRAVEL/demo.pcd')
 # in_pc = np.asarray(pcd.points)
 ground_pc = o3d.utility.Vector3dVector()
 nonground_pc = o3d.utility.Vector3dVector()
