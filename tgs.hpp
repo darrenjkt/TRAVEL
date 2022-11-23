@@ -250,6 +250,7 @@ namespace travel {
             cloudGround_out = ptCloud_tgfwise_ground_;
             cloudNonground_out = ptCloud_tgfwise_nonground_;            
 
+            // Convert PointCloud back to Eigen::Vector3d
             for (auto &point : cloudGround_out.points){
                 Eigen::Vector3d point_eigen (static_cast<double>(point.x), static_cast<double>(point.y), static_cast<double>(point.z));  
                 cloudGround_out_vec.push_back(point_eigen);
