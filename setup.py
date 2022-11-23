@@ -14,7 +14,7 @@ setup(name='travel',
       ext_modules=[
           Pybind11Extension(
             name='travel', 
-            sources=['travel_api.cpp',],
+            sources=['travel_pybind.cpp',],
             include_dirs=[
             os.environ.get("EIGEN_INCLUDE_DIR", "/usr/include/eigen3/"),
             "/usr/include/pcl-1.8/"],          

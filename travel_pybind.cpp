@@ -19,6 +19,4 @@ PYBIND11_MODULE(travel, m) {
         .def(py::init<>())
         .def("setParams", &travel::TravelGroundSeg<PointXYZILID>::setParams)
         .def("estimateGround", &travel::TravelGroundSeg<PointXYZILID>::estimateGround);
-
-    // m.def("fromArray", &fromArray, "Convert numpy array to pcl");
 }
