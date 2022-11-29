@@ -8,7 +8,7 @@ in_pc = np.asarray(pcd.points)
 print(f'Loaded input cloud: {np.asarray(pcd.points).shape}')
 
 ground_seg = Travel()
-ground_pc, nonground_pc = ground_seg.estimate_ground(in_pc)
+ground_pc, nonground_pc, ground_inds = ground_seg.estimate_ground(in_pc)
 
 print(f'Ground cloud: {ground_pc.shape}')
 print(f'Non-ground cloud: {nonground_pc.shape}')

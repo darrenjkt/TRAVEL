@@ -2,8 +2,6 @@ from setuptools import find_packages, setup
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 import os
 
-pcl_libs = ["pcl_common-1.8", "pcl_filters-1.8"]
-
 setup(name='travel',
       version='1.0',
       description='Ground estimation with TRAVEL',      

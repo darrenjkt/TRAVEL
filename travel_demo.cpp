@@ -26,7 +26,7 @@ struct PointXYZILID
   PCL_ADD_POINT4D;                    // quad-word XYZ
   float    intensity;                 ///< laser intensity reading
   uint16_t label;                     ///< point label
-  uint16_t id;
+  uint32_t id;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW     // ensure proper alignment
 } EIGEN_ALIGN16;
 
@@ -36,7 +36,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZILID,
                                   (float, z, z)
                                   (float, intensity, intensity)
                                   (uint16_t, label, label)
-                                  (uint16_t, id, id))
+                                  (uint32_t, id, id))
 
 using PointT = PointXYZILID;
 
@@ -57,26 +57,26 @@ int main(void)
   nonground_pc.reset(new pcl::PointCloud<PointT>());
   labeled_pc.reset(new pcl::PointCloud<PointT>());
   pcl::PCDReader reader;
-	reader.read("demo.pcd", *cloud_in);
+	reader.read("waymo_pc.pcd", *cloud_in);
 	std::cout << "Read Cloud Data Points Size: " << cloud_in->points.size() << std::endl;
 
   travel_ground_seg.reset(new travel::TravelGroundSeg<PointT>());
 
   // Ground seg
-  float min_range_ = 1.0;
+  float min_range_ = 2.0;
   float max_range_= 300.0;  
-  float tgf_res = 4.0;
+  float tgf_res = 8.0;
   int num_iter = 3;
-  int num_lpr = 2;
-  int num_min_pts =  2;
+  int num_lpr = 5;
+  int num_min_pts =  10;
   float th_seeds =  0.5;
-  float th_dist =  0.2;
+  float th_dist =  0.125;
   float th_outlier = 1.0;
-  float th_normal = 0.97;
+  float th_normal = 0.94;
   float th_weight = 100;
   float th_obstacle = 0.5;
-  float th_lcc_normal_similarity = 0.125;
-  float th_lcc_planar_dist = 0.25;
+  float th_lcc_normal_similarity = 0.03;
+  float th_lcc_planar_dist = 0.2;
 
   bool refine_mode = false;
   bool viz_mode = false;
@@ -89,15 +89,15 @@ int main(void)
 
   filtered_pc->points.reserve(cloud_in->points.size());
   for (auto &point : cloud_in->points){
-      bool is_nan = std::isnan(point.x) || std::isnan(point.y) || std::isnan(point.z);
-      double pt_range = 0.0;
-      if (is_nan){
-          continue;
-      }    
-      pt_range = sqrt(pow(point.x, 2) + pow(point.y, 2) + pow(point.z, 2));
-      if (pt_range <= min_range_ || pt_range >= max_range_){
-          continue;
-      }
+      // bool is_nan = std::isnan(point.x) || std::isnan(point.y) || std::isnan(point.z);
+      // double pt_range = 0.0;
+      // if (is_nan){
+      //     continue;
+      // }    
+      // pt_range = sqrt(pow(point.x, 2) + pow(point.y, 2) + pow(point.z, 2));
+      // if (pt_range <= min_range_ || pt_range >= max_range_){
+      //     continue;
+      // }
       filtered_pc->push_back(point);
   }
   
@@ -105,14 +105,14 @@ int main(void)
   std::vector<Eigen::Vector3d> nonground_pc_vec;
   std::vector<Eigen::Vector3d> ground_pc_vec;
   std::vector<Eigen::Vector3d> filtered_pc_vec;
+  std::vector<Eigen::Vector3d> ground_inds_vec;
   for (auto &point : filtered_pc->points){
     Eigen::Vector3d point_eigen (static_cast<double>(point.x), static_cast<double>(point.y), static_cast<double>(point.z));  
     filtered_pc_vec.push_back(point_eigen);
   }
 
   // Apply traversable ground segmentation
-  double ground_seg_time = 0.0;
-  travel_ground_seg->estimateGround(filtered_pc_vec, ground_pc_vec, nonground_pc_vec, ground_seg_time);
+  travel_ground_seg->estimateGround(filtered_pc_vec, ground_pc_vec, nonground_pc_vec, ground_inds_vec);
 
   // Convert from std::vector<Eigen::Vector3d> to pcl::PointCloud
   for (auto &point_vec : ground_pc_vec){
@@ -131,7 +131,6 @@ int main(void)
   }
 
   std::cout << "\033[1;35m Traversable-Ground Seg: " << filtered_pc->size() << " -> Ground: " << ground_pc->size() << ", NonGround: " << nonground_pc->size() << "\033[0m" << std::endl;
-  std::cout << "Traversable-Ground Seg time: " << ground_seg_time << std::endl;
 
   // save floor cloud & nofloor cloud data.
   pcl::PCDWriter writer;

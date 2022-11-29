@@ -206,24 +206,23 @@ namespace travel {
         void estimateGround(const std::vector<Eigen::Vector3d>& cloud_in_vec,
                             std::vector<Eigen::Vector3d>& cloudGround_out_vec,
                             std::vector<Eigen::Vector3d>& cloudNonground_out_vec,
-                            double& time_taken){            
+                            std::vector<Eigen::Vector3d>& ground_inds_vec){            
         
             // 0. Init
-            static time_t start, end;
             pcl::PointCloud<PointType> cloud_in;
             pcl::PointCloud<PointType> cloudGround_out;
             pcl::PointCloud<PointType> cloudNonground_out;
-            
-            // Convert Eigen to PointCloud
-            for (auto &point_vec : cloud_in_vec){
-                PointType point;
-                point.x = point_vec[0];
-                point.y = point_vec[1];
-                point.z = point_vec[2];
-                cloud_in.push_back(point);
-            }
 
-            start = clock();
+            // Convert Eigen to PointCloud
+            for (uint32_t i=0; i < cloud_in_vec.size(); i++) {
+                PointType point;
+                point.x = cloud_in_vec[i][0];
+                point.y = cloud_in_vec[i][1];
+                point.z = cloud_in_vec[i][2];
+                point.id = i;                
+                cloud_in.push_back(point);
+               
+            }
             ptCloud_tgfwise_outliers_.clear();
             ptCloud_tgfwise_outliers_.reserve(cloud_in.size());
 
@@ -250,18 +249,18 @@ namespace travel {
             cloudGround_out = ptCloud_tgfwise_ground_;
             cloudNonground_out = ptCloud_tgfwise_nonground_;            
 
-            // Convert PointCloud back to Eigen::Vector3d
+            // Convert PointCloud back to Eigen::Vector3d            
             for (auto &point : cloudGround_out.points){
                 Eigen::Vector3d point_eigen (static_cast<double>(point.x), static_cast<double>(point.y), static_cast<double>(point.z));  
                 cloudGround_out_vec.push_back(point_eigen);
+
+                Eigen::Vector3d inds (static_cast<double>(point.id), 0.0, 0.0);  
+                ground_inds_vec.push_back(inds);
             }
             for (auto &point : cloudNonground_out.points){
                 Eigen::Vector3d point_eigen (static_cast<double>(point.x), static_cast<double>(point.y), static_cast<double>(point.z));  
                 cloudNonground_out_vec.push_back(point_eigen);
             }
-
-            end = clock();
-            time_taken = (double)(end - start) / CLOCKS_PER_SEC;
 
             return;
         };
