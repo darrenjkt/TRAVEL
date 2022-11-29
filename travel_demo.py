@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Read pcd
-pcd = o3d.io.read_point_cloud('/TRAVEL/demo.pcd')
+pcd = o3d.io.read_point_cloud('/TRAVEL/build/waymo_pc.pcd')
 in_pc = np.asarray(pcd.points)
 print(f'Loaded input cloud: {np.asarray(pcd.points).shape}')
 
@@ -21,12 +21,12 @@ cmap = plt.get_cmap('tab20')
 
 # Db scan to cluster objects - downsample then cluster
 downpcd, idx_c, idx_vox = nonground_o3d.voxel_down_sample_and_trace(0.2, nonground_o3d.get_min_bound(), nonground_o3d.get_max_bound(), False)
-cluster_labels = np.array(downpcd.cluster_dbscan(eps=0.3, min_points=2))
+cluster_labels = np.array(downpcd.cluster_dbscan(eps=0.3, min_points=5), dtype=int) # Converting to int here speeds up the computation a little
 
 # Apply cluster ID to every point in the voxel
-pcd_cids = np.zeros((np.asarray(nonground_o3d.points).shape[0]), dtype=np.int32)
-for row_id in range(len(cluster_labels)):
-  pcd_cids[idx_vox[row_id]] = cluster_labels[row_id]
+pcd_cids = np.zeros((np.asarray(nonground_o3d.points).shape[0]), dtype=np.int32) # For some reason np.int32 here is faster than python native int
+for (vox_ids, cls_ids) in zip(idx_vox, cluster_labels):
+  pcd_cids[np.array(vox_ids, dtype=int)] = cls_ids # Converting vox_ids to int here speeds up the computation by a lot
 
 colors = np.ones((pcd_cids.shape[0],3))
 colors[pcd_cids != -1] = cmap(pcd_cids[pcd_cids != -1]%20)[:,:3]
