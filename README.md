@@ -37,7 +37,7 @@ my_project
   - travel_api.py 
   - src
     - tgs.hpp
-    - travel_api.cpp
+    - travel_pybind.cpp
   
 ```
 Then in the setup.py file, 
@@ -45,7 +45,7 @@ Then in the setup.py file,
 ext_modules=[
         Pybind11Extension(
             name='travel.ground_seg', 
-            sources=['travel/src/travel_api.cpp'],
+            sources=['travel/src/travel_pybind.cpp'],
             include_dirs=[
             os.environ.get("EIGEN_INCLUDE_DIR", "/usr/include/eigen3/"),
             "/usr/local/include/pcl-1.8/"],          
