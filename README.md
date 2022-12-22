@@ -1,7 +1,11 @@
 # TRAVEL: Pointcloud Ground Segmentation
 Original algorithm: https://github.com/url-kaist/TRAVEL
 
-I wanted to use this ground segmentation in a python repository and so I converted the C++ functions to python apis. I use Open3D to interface with the function (see travel_demo.py for usage).
+I wanted to use this ground segmentation in a python repository and so I converted the C++ functions to python apis. I use Open3D to interface with the function (see travel_demo.py for usage). 
+
+Note that this only does the ground segmentation part of TRAVEL, not the object clustering.
+
+Additional changes: Modified the estimateGround function to return ground_inds, rather than the separated ground and obj pcd to allow for indexing the original input pointcloud and retaining extra channel information.
 
 # Pre-Requisites
 Apt libraries:
