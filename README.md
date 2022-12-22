@@ -53,6 +53,20 @@ ext_modules=[
             ), 
             ...OtherExtensions...]
 ```
+
+### Troubleshooting
+If the above doesn't work, a dirty workaround is to keep this repo's setup.py in the travel folder and build it from there.
+```
+my_project
+- travel
+  - travel_api.py 
+  - setup.py
+  - src
+    - tgs.hpp
+    - travel_pybind.cpp
+```    
+Building with either `python setup.py develop` or `pip install -e . --user` should work.
+
 # How to run
 Run docker
 ```
