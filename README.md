@@ -68,7 +68,7 @@ my_project
 Building with either `python setup.py develop` or `pip install -e . --user` should work.
 
 # How to run
-Run docker
+Run docker. Note that python in my provided docker image needs to run with python3.7 i.e. `python3.7 travel_demo.py`
 ```
 bash docker/run.sh
 ```
