@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Read pcd
-pcd = o3d.io.read_point_cloud('/TRAVEL/build/waymo_pc.pcd')
+pcd = o3d.io.read_point_cloud('/TRAVEL/demo.pcd')
 in_pc = np.asarray(pcd.points)
 print(f'Loaded input cloud: {np.asarray(pcd.points).shape}')
 
