@@ -57,7 +57,7 @@ int main(void)
   nonground_pc.reset(new pcl::PointCloud<PointT>());
   labeled_pc.reset(new pcl::PointCloud<PointT>());
   pcl::PCDReader reader;
-	reader.read("waymo_pc.pcd", *cloud_in);
+	reader.read("demo.pcd", *cloud_in);
 	std::cout << "Read Cloud Data Points Size: " << cloud_in->points.size() << std::endl;
 
   travel_ground_seg.reset(new travel::TravelGroundSeg<PointT>());
